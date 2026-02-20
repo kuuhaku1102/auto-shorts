@@ -26,3 +26,9 @@ jobs:
       - name: Run scraper
         run: |
           python main.py
+
+      - name: Upload DB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: prices-db
+          path: state/prices.db
