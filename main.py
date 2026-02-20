@@ -10,12 +10,14 @@ from db.database import (
 )
 
 from utils import clean_price, clean_rate
+from logic.script_builder import build_script
 
 
 def run(mode, label):
     print(f"\n=== {label} ===")
 
     cards = get_top5(mode)
+    items = []
 
     for card in cards:
         name = get_card_name(card["detail_url"])
@@ -25,11 +27,7 @@ def run(mode, label):
 
         # 🔥 前日価格取得
         yesterday_price = get_yesterday_price(name)
-
-        if yesterday_price is not None:
-            diff = price - yesterday_price
-        else:
-            diff = None
+        diff = price - yesterday_price if yesterday_price is not None else None
 
         # 🔥 連続ランクイン回数
         consecutive = get_consecutive_days(name, mode)
@@ -41,18 +39,35 @@ def run(mode, label):
             "change_rate": rate,
             "diff_from_yesterday": diff,
             "consecutive_days": consecutive,
-            "detail_url": card["detail_url"]
+            "detail_url": card["detail_url"],
+            "image_url": card.get("image_url")
         }
 
         print(data)
 
         insert_record(mode, data)
+        items.append(data)
+
+    return items
 
 
 if __name__ == "__main__":
+    # DB初期化
     init_db()
 
-    run(5, "7日高騰TOP5")
-    run(6, "7日下落TOP5")
+    # データ取得
+    rising_items = run(5, "7日高騰TOP5")
+    falling_items = run(6, "7日下落TOP5")
 
+    # 台本生成（ハイブリッド）
+    rising_script = build_script("7日高騰TOP5", rising_items)
+    falling_script = build_script("7日下落TOP5", falling_items)
+
+    print("\n=== 高騰動画台本 ===")
+    print(rising_script)
+
+    print("\n=== 下落動画台本 ===")
+    print(falling_script)
+
+    # DB確認（デバッグ用）
     show_all()
