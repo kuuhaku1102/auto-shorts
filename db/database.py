@@ -94,3 +94,18 @@ def get_yesterday_price(name):
     if row:
         return row[0]
     return None
+
+def get_consecutive_days(name, mode):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    SELECT COUNT(*)
+    FROM prices
+    WHERE name = ?
+      AND mode = ?
+    """, (name, mode))
+
+    count = cursor.fetchone()[0]
+    conn.close()
+    return count
