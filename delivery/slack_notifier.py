@@ -1,4 +1,5 @@
 import os
+from urllib.parse import urlparse
 import requests
 
 
@@ -6,6 +7,40 @@ def _post_to_webhook(webhook_url: str, payload: dict):
     resp = requests.post(webhook_url, json=payload, timeout=30)
     if resp.status_code != 200:
         raise RuntimeError(f"Slack webhook failed: {resp.status_code} {resp.text}")
+
+
+def _format_price(price) -> str:
+    if isinstance(price, int):
+        return f"¥{price:,}"
+    if isinstance(price, float):
+        return f"¥{int(price):,}"
+    if price is None:
+        return "-"
+    return str(price)
+
+
+def _image_file_name(card: dict) -> str:
+    image_url = card.get("image_url")
+    if not image_url:
+        return f"card{card.get('rank', 'x')}.jpg"
+
+    parsed = urlparse(image_url)
+    file_name = os.path.basename(parsed.path)
+    return file_name or f"card{card.get('rank', 'x')}.jpg"
+
+
+def _build_ranking_data_block(cards: list[dict]) -> str:
+    lines = ["const rankingData = ["]
+    for card in cards:
+        rank = card.get("rank", "-")
+        name = str(card.get("name", "不明カード")).replace('"', '\\"')
+        price = _format_price(card.get("price")).replace('"', '\\"')
+        image = _image_file_name(card).replace('"', '\\"')
+        lines.append(
+            f'  {{ rank: {rank}, name: "{name}", price: "{price}", image: "{image}" }},'
+        )
+    lines.append("];")
+    return "\n".join(lines)
 
 
 def send_to_slack(title: str, content: str, cards: list[dict] | None = None):
@@ -27,13 +62,20 @@ def send_to_slack(title: str, content: str, cards: list[dict] | None = None):
     if not cards:
         return
 
+    ranking_data = _build_ranking_data_block(cards)
+    ranking_payload = {
+        "text": "📦 rankingData\n```" + ranking_data + "```"
+    }
+    _post_to_webhook(webhook_url, ranking_payload)
+
     for card in cards:
         rank = card.get("rank", "-")
         name = card.get("name", "不明カード")
+        price = _format_price(card.get("price"))
         image_url = card.get("image_url")
         detail_url = card.get("detail_url")
 
-        body = f"#{rank} {name}"
+        body = f"#{rank} {name}\n価格: {price}"
         if detail_url:
             body += f"\n{detail_url}"
 
