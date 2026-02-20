@@ -2,7 +2,7 @@ name: Pokeca Ranking Scraper
 
 on:
   schedule:
-    - cron: "0 0 * * *"   # 毎日9:00 JST（UTC 0:00）
+    - cron: "0 0 * * *"
   workflow_dispatch:
 
 jobs:
@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          persist-credentials: true
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -24,11 +26,12 @@ jobs:
           playwright install --with-deps chromium
 
       - name: Run scraper
-        run: |
-          python main.py
+        run: python main.py
 
-      - name: Upload DB artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: prices-db
-          path: state/prices.db
+      - name: Commit DB changes
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+          git add state/prices.db
+          git commit -m "Update prices DB" || echo "No changes to commit"
+          git push
