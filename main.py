@@ -11,6 +11,7 @@ from db.database import (
 
 from utils import clean_price, clean_rate
 from logic.script_builder import build_script
+from delivery.slack_notifier import send_to_slack
 
 
 def run(mode, label):
@@ -25,11 +26,11 @@ def run(mode, label):
         price = clean_price(card["price"])
         rate = clean_rate(card["change_rate"])
 
-        # 🔥 前日価格取得
+        # 前日価格取得
         yesterday_price = get_yesterday_price(name)
         diff = price - yesterday_price if yesterday_price is not None else None
 
-        # 🔥 連続ランクイン回数
+        # ランクイン回数（現状は出現回数）
         consecutive = get_consecutive_days(name, mode)
 
         data = {
@@ -63,11 +64,16 @@ if __name__ == "__main__":
     rising_script = build_script("7日高騰TOP5", rising_items)
     falling_script = build_script("7日下落TOP5", falling_items)
 
+    # ログ出力
     print("\n=== 高騰動画台本 ===")
     print(rising_script)
 
     print("\n=== 下落動画台本 ===")
     print(falling_script)
+
+    # Slack送信（ここが追加）
+    send_to_slack("📈 7日高騰TOP5 台本", rising_script)
+    send_to_slack("📉 7日下落TOP5 台本", falling_script)
 
     # DB確認（デバッグ用）
     show_all()
