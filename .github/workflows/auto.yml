@@ -1,0 +1,24 @@
+name: auto-shorts-daily
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 21 * * *" # JST 06:00
+
+jobs:
+  build-short:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run pipeline
+        run: python main.py
