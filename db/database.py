@@ -72,3 +72,25 @@ def show_all():
         print(row)
 
     conn.close()
+def get_yesterday_price(name):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    SELECT price
+    FROM prices
+    WHERE name = ?
+      AND date = (
+          SELECT date FROM prices
+          WHERE name = ?
+          ORDER BY date DESC
+          LIMIT 1 OFFSET 1
+      )
+    """, (name, name))
+
+    row = cursor.fetchone()
+    conn.close()
+
+    if row:
+        return row[0]
+    return None
