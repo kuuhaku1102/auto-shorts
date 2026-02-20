@@ -72,8 +72,8 @@ if __name__ == "__main__":
     print(falling_script)
 
     # Slack送信（ここが追加）
-    send_to_slack("📈 7日高騰TOP5 台本", rising_script)
-    send_to_slack("📉 7日下落TOP5 台本", falling_script)
+    send_to_slack("📈 7日高騰TOP5 台本", rising_script, cards=rising_items)
+    send_to_slack("📉 7日下落TOP5 台本", falling_script, cards=falling_items)
 
     # DB確認（デバッグ用）
     show_all()
