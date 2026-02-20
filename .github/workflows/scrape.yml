@@ -5,7 +5,7 @@ permissions:
 
 on:
   schedule:
-    - cron: "0 0 * * *"   # 毎日9:00 JST
+    - cron: "0 0 * * *"   # 毎日9:00 JST（UTC 0:00）
   workflow_dispatch:
 
 jobs:
@@ -33,9 +33,10 @@ jobs:
           pip install -r requirements.txt
           playwright install --with-deps chromium
 
-      - name: Run scraper + script builder
+      - name: Run scraper + script builder + Slack notify
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           TZ: Asia/Tokyo
         run: |
           python main.py
