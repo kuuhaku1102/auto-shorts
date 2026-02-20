@@ -42,3 +42,15 @@ def insert_record(mode, card):
 
     conn.commit()
     conn.close()
+    
+def show_all():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM prices")
+    rows = cursor.fetchall()
+
+    for row in rows:
+        print(row)
+
+    conn.close()
