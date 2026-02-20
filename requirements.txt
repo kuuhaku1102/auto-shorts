@@ -1,5 +1,6 @@
-beautifulsoup4>=4.12.0
-moviepy>=1.0.3
-openai>=1.0.0
-Pillow>=10.0.0
-requests>=2.31.0
+playwright
+beautifulsoup4
+moviepy
+openai
+Pillow
+requests
