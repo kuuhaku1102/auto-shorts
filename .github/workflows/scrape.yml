@@ -1,5 +1,8 @@
 name: Pokeca Ranking Scraper
 
+permissions:
+  contents: write   # ← これが重要
+
 on:
   schedule:
     - cron: "0 0 * * *"
