@@ -36,7 +36,7 @@ def insert_record(mode, card):
         card["rank"],
         card["name"],
         card["price"],
-        card["change_rate_7d"],
+        card["change_rate"],   # ← 修正
         card["detail_url"]
     ))
 
