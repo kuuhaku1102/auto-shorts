@@ -1,6 +1,6 @@
 from ranking_scraper import get_top5
 from detail_scraper import get_card_name
-
+from db.database import init_db, insert_record, show_all
 from db.database import init_db, insert_record
 from utils import clean_price, clean_rate
 
@@ -33,3 +33,4 @@ if __name__ == "__main__":
     init_db()
     run(5, "7日高騰TOP5")
     run(6, "7日下落TOP5")
+    show_all()   # ← 追加
