@@ -1,5 +1,7 @@
 from ranking_scraper import get_top5
 from detail_scraper import get_card_name
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from db.database import (
     init_db,
@@ -53,16 +55,20 @@ def run(mode, label):
 
 
 if __name__ == "__main__":
+    date_label = datetime.now(ZoneInfo("Asia/Tokyo")).strftime("%-m月%-d日")
+    rising_title = f"{date_label}高騰TOP5"
+    falling_title = f"{date_label}下落TOP5"
+
     # DB初期化
     init_db()
 
     # データ取得
-    rising_items = run(5, "7日高騰TOP5")
-    falling_items = run(6, "7日下落TOP5")
+    rising_items = run(5, rising_title)
+    falling_items = run(6, falling_title)
 
     # 台本生成（ハイブリッド）
-    rising_script = build_script("7日高騰TOP5", rising_items)
-    falling_script = build_script("7日下落TOP5", falling_items)
+    rising_script = build_script(rising_title, rising_items)
+    falling_script = build_script(falling_title, falling_items)
 
     # ログ出力
     print("\n=== 高騰動画台本 ===")
@@ -72,8 +78,8 @@ if __name__ == "__main__":
     print(falling_script)
 
     # Slack送信（ここが追加）
-    send_to_slack("📈 7日高騰TOP5 台本", rising_script, cards=rising_items)
-    send_to_slack("📉 7日下落TOP5 台本", falling_script, cards=falling_items)
+    send_to_slack(f"📈 {rising_title} 台本", rising_script, cards=rising_items)
+    send_to_slack(f"📉 {falling_title} 台本", falling_script, cards=falling_items)
 
     # DB確認（デバッグ用）
     show_all()
