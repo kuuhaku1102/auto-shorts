@@ -78,8 +78,15 @@ if __name__ == "__main__":
     print(falling_script)
 
     # Slack送信（ここが追加）
-    send_to_slack(f"📈 {rising_title} 台本", rising_script, cards=rising_items)
-    send_to_slack(f"📉 {falling_title} 台本", falling_script, cards=falling_items)
+    try:
+        send_to_slack(f"📈 {rising_title} 台本", rising_script, cards=rising_items)
+    except Exception as exc:
+        print(f"高騰通知の送信に失敗: {exc}")
+
+    try:
+        send_to_slack(f"📉 {falling_title} 台本", falling_script, cards=falling_items)
+    except Exception as exc:
+        print(f"下落通知の送信に失敗: {exc}")
 
     # DB確認（デバッグ用）
     show_all()
