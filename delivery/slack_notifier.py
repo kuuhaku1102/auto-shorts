@@ -1,11 +1,22 @@
 import os
+import time
 from urllib.parse import urlparse
 import requests
 
 
 def _post_to_webhook(webhook_url: str, payload: dict):
-    resp = requests.post(webhook_url, json=payload, timeout=30)
-    if resp.status_code != 200:
+    max_attempts = 3
+
+    for attempt in range(1, max_attempts + 1):
+        resp = requests.post(webhook_url, json=payload, timeout=30)
+        if resp.status_code == 200:
+            return
+
+        if resp.status_code == 429 and attempt < max_attempts:
+            retry_after = int(resp.headers.get("Retry-After", "1"))
+            time.sleep(max(retry_after, 1))
+            continue
+
         raise RuntimeError(f"Slack webhook failed: {resp.status_code} {resp.text}")
 
 
@@ -57,7 +68,11 @@ def send_to_slack(title: str, content: str, cards: list[dict] | None = None):
     payload = {
         "text": f"*{title}*\n```{content}```"
     }
-    _post_to_webhook(webhook_url, payload)
+    try:
+        _post_to_webhook(webhook_url, payload)
+    except Exception as exc:
+        print(f"Failed to send script message to Slack: {exc}")
+        return
 
     if not cards:
         return
@@ -66,7 +81,10 @@ def send_to_slack(title: str, content: str, cards: list[dict] | None = None):
     ranking_payload = {
         "text": "📦 rankingData\n```" + ranking_data + "```"
     }
-    _post_to_webhook(webhook_url, ranking_payload)
+    try:
+        _post_to_webhook(webhook_url, ranking_payload)
+    except Exception as exc:
+        print(f"Failed to send rankingData to Slack: {exc}")
 
     for card in cards:
         rank = card.get("rank", "-")
@@ -100,4 +118,7 @@ def send_to_slack(title: str, content: str, cards: list[dict] | None = None):
         else:
             card_payload = {"text": body}
 
-        _post_to_webhook(webhook_url, card_payload)
+        try:
+            _post_to_webhook(webhook_url, card_payload)
+        except Exception as exc:
+            print(f"Failed to send card notification (rank={rank}, name={name}): {exc}")
