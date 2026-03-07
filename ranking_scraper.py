@@ -1,7 +1,35 @@
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 import re
+import time
 
 BASE_URL = "https://pokeca-chart.com"
+CARD_SELECTOR = ".cp_card"
+
+
+def _open_ranking_page(page, url, retries=3):
+    last_error = None
+
+    for attempt in range(1, retries + 1):
+        try:
+            page.goto(url, wait_until="domcontentloaded", timeout=60000)
+            page.wait_for_load_state("networkidle", timeout=30000)
+            page.wait_for_selector(CARD_SELECTOR, state="visible", timeout=45000)
+            return
+        except PlaywrightTimeoutError as exc:
+            last_error = exc
+
+            # アクセス制限やメンテ文言の検知
+            body_text = page.locator("body").inner_text(timeout=5000) if page.locator("body").count() else ""
+            if "申し訳ございません" in body_text or "アクセス" in body_text:
+                time.sleep(2 * attempt)
+            else:
+                time.sleep(attempt)
+
+            # 最終リトライ以外は再読込
+            if attempt < retries:
+                page.reload(wait_until="domcontentloaded", timeout=60000)
+
+    raise RuntimeError(f"ランキングページの読込に失敗しました: {url}") from last_error
 
 
 def get_top5(mode):
@@ -14,12 +42,18 @@ def get_top5(mode):
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
-        page.goto(url)
+        context = browser.new_context(
+            user_agent=(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/124.0.0.0 Safari/537.36"
+            )
+        )
+        page = context.new_page()
 
-        page.wait_for_selector(".cp_card")
+        _open_ranking_page(page, url)
 
-        cards = page.locator(".cp_card").all()
+        cards = page.locator(CARD_SELECTOR).all()
 
         result = []
 
@@ -64,6 +98,7 @@ def get_top5(mode):
                 "image_url": image_url
             })
 
+        context.close()
         browser.close()
 
         # rank順にソート

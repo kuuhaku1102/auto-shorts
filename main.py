@@ -23,7 +23,11 @@ def run(mode, label):
     items = []
 
     for card in cards:
-        name = get_card_name(card["detail_url"])
+        try:
+            name = get_card_name(card["detail_url"])
+        except Exception as exc:
+            print(f"カード名取得失敗: {card['detail_url']} ({exc})")
+            name = card["detail_url"].rstrip("/").split("/")[-1]
 
         price = clean_price(card["price"])
         rate = clean_rate(card["change_rate"])
