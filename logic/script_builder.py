@@ -2,6 +2,7 @@ from openai import OpenAI
 import os
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+FALLING_CTA = "気になったカードがあれば、ぜひチャンネル登録よろしく！"
 
 
 def build_fixed_part(label, items):
@@ -60,5 +61,8 @@ YouTube Shorts向けに
 def build_script(label, items):
     fixed = build_fixed_part(label, items)
     ai_comment = build_ai_comment(label, items)
+
+    if "下落" in label:
+        return f"{fixed}\n\n{ai_comment}\n\n{FALLING_CTA}"
 
     return f"{fixed}\n\n{ai_comment}"
